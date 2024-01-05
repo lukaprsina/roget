@@ -1,4 +1,6 @@
-use crate::{Correctness, Guess, Guesser, PackedCorrectness, DICTIONARY, MAX_MASK_ENUM};
+use crate::{
+    Correctness, Guess, Guesser, PackedCorrectness, DICTIONARY, FIRST_GUESS, MAX_MASK_ENUM,
+};
 use once_cell::sync::OnceCell;
 use once_cell::unsync::OnceCell as UnSyncOnceCell;
 use std::borrow::Cow;
@@ -285,10 +287,6 @@ impl Solver {
         }
     }
 }
-
-// change to 5 or 6
-// static FIRST_GUESS: &str = "presev";
-static FIRST_GUESS: &str = "tares";
 
 impl Guesser for Solver {
     fn guess(&mut self, history: &[Guess]) -> String {

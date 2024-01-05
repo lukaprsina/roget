@@ -1,10 +1,7 @@
 use std::borrow::Cow;
 
 use clap::{ArgEnum, Parser};
-use roget::{Guesser, Solver, WORD_LENGTH};
-
-// change to 5 or 6
-const GAMES: &str = include_str!("../answers-5.txt");
+use roget::{Guesser, Solver, GAMES, WORD_LENGTH};
 
 #[global_allocator]
 static GLOBAL_ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;

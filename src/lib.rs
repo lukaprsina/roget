@@ -2,11 +2,17 @@
 #![allow(clippy::blocks_in_if_conditions)]
 
 use std::{borrow::Cow, collections::HashSet, num::NonZeroU8};
-
 mod solver;
 pub use solver::{Rank, Solver};
 
-pub const WORD_LENGTH: usize = 5;
+// change to 5 or 6
+pub const WORD_LENGTH: usize = 6;
+pub const GAMES: &str = include_str!("../answers-6.txt");
+
+static FIRST_GUESS: &str = "presev"; // 6
+
+// static FIRST_GUESS: &str = "tares"; // 5
+
 include!(concat!(env!("OUT_DIR"), "/dictionary.rs"));
 
 pub struct Wordle {
