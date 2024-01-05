@@ -1,7 +1,7 @@
 #![allow(deprecated)]
 use std::borrow::Cow;
 
-use clap::{ArgEnum, Parser};
+use clap::{Parser, ValueEnum};
 use roget::{Guesser, Solver, GAMES, WORD_LENGTH};
 
 #[global_allocator]
@@ -18,7 +18,7 @@ struct Args {
     /// Set how candidates are ranked at each step of the solver.
     ///
     /// By default, candidates will be ranked based on expected score.
-    #[clap(short, long, arg_enum, default_value = "expected-score")]
+    #[clap(short, long, value_enum, default_value = "expected-score")]
     rank_by: Rank,
 
     /// By default, correcness computation are cached. This flag disables that.
@@ -50,7 +50,7 @@ struct Args {
     interactive: bool,
 }
 
-#[derive(ArgEnum, Debug, Clone, Copy)]
+#[derive(ValueEnum, Debug, Clone, Copy)]
 enum Rank {
     /// Just pick the first candidate.
     First,
