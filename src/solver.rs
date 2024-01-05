@@ -211,9 +211,10 @@ impl Options {
                     // First, we sanity check that the byte value 0 is equivalent to our `None`
                     // value.
                     let c = &Cell::new(None::<PackedCorrectness>);
+                    println!("{:?}", c.get());
                     assert_eq!(std::mem::size_of_val(c), 1);
                     let c = c as *const _;
-                    let c = c as *const u8;
+                    let c = c as *const u16;
                     assert_eq!(unsafe { *c }, 0);
 
                     // Then, we allocate the number of bytes we need directly on the heap.
@@ -362,14 +363,14 @@ impl Guesser for Solver {
                     for (candidate, count, candidate_idx) in &*self.remaining {
                         in_remaining |= word_idx == *candidate_idx;
                         let idx = get_packed(row, word, candidate, *candidate_idx);
-                        totals[usize::from(u8::from(idx))] += count;
+                        totals[usize::from(u16::from(idx))] += count;
                     }
                 });
             } else {
                 for (candidate, count, candidate_idx) in &*self.remaining {
                     in_remaining |= word_idx == *candidate_idx;
                     let idx = PackedCorrectness::from(Correctness::compute(candidate, word));
-                    totals[usize::from(u8::from(idx))] += count;
+                    totals[usize::from(u16::from(idx))] += count;
                 }
             }
 

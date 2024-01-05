@@ -1,7 +1,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::blocks_in_if_conditions)]
 
-use std::{borrow::Cow, collections::HashSet, num::NonZeroU8};
+use std::{borrow::Cow, collections::HashSet, num::NonZeroU16};
 mod solver;
 pub use solver::{Rank, Solver};
 
@@ -68,9 +68,10 @@ pub enum Correctness {
 }
 
 impl Correctness {
-    fn is_misplaced(letter: u8, answer: &str, used: &mut [bool; WORD_LENGTH]) -> bool {
-        answer.bytes().enumerate().any(|(i, a)| {
-            if a == letter && !used[i] {
+    fn is_misplaced(letter: u16, answer: &str, used: &mut [bool; WORD_LENGTH]) -> bool {
+        let mut enumerated = answer.bytes().enumerate();
+        enumerated.any(|(i, a)| {
+            if u16::from(a) == letter && !used[i] {
                 used[i] = true;
                 return true;
             }
@@ -85,7 +86,7 @@ impl Correctness {
         let answer_bytes = answer.as_bytes();
         let guess_bytes = guess.as_bytes();
         // Array indexed by lowercase ascii letters
-        let mut misplaced = [0u8; (b'z' - b'a' + 1) as usize];
+        let mut misplaced = [0u16; (b'z' - b'a' + 1) as usize];
 
         // Find all correct letters
         for ((&answer, &guess), c) in answer_bytes.iter().zip(guess_bytes).zip(c.iter_mut()) {
@@ -114,17 +115,17 @@ pub const MAX_MASK_ENUM: usize = 3_usize.pow(WORD_LENGTH as u32);
 /// A wrapper type for `[Correctness; WORD_LENGTH]` packed into a single byte with a niche.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-// The NonZeroU8 here lets the compiler know that we're not using the value `0`, and that `0` can
+// The NonZeroU16 here lets the compiler know that we're not using the value `0`, and that `0` can
 // therefore be used to represent `None` for `Option<PackedCorrectness>`.
-struct PackedCorrectness(NonZeroU8);
+struct PackedCorrectness(NonZeroU16);
 
 impl From<[Correctness; WORD_LENGTH]> for PackedCorrectness {
     fn from(c: [Correctness; WORD_LENGTH]) -> Self {
         println!();
-        let packed = c.iter().fold(0, |acc: u8, c| {
+        let packed = c.iter().fold(0, |acc: u16, c| {
             let old_acc = acc;
             println!("acc {old_acc:#010b} * 3");
-            let multiplied_acc = acc.checked_mul(3_u8);
+            let multiplied_acc = acc.checked_mul(3_u16);
             let multiplied_acc = match multiplied_acc {
                 Some(multiplied_acc) => multiplied_acc,
                 None => {
@@ -141,11 +142,11 @@ impl From<[Correctness; WORD_LENGTH]> for PackedCorrectness {
             let sum = multiplied_acc + correctness_value;
             sum
         });
-        Self(NonZeroU8::new(packed + 1).unwrap())
+        Self(NonZeroU16::new(packed + 1).unwrap())
     }
 }
 
-impl From<PackedCorrectness> for u8 {
+impl From<PackedCorrectness> for u16 {
     fn from(this: PackedCorrectness) -> Self {
         this.0.get() - 1
     }
@@ -183,7 +184,9 @@ impl Guess<'_> {
             if *e == Correctness::Correct {
                 continue;
             }
-            if Correctness::is_misplaced(g, word, &mut used) != (*e == Correctness::Misplaced) {
+            if Correctness::is_misplaced(g.into(), word, &mut used)
+                != (*e == Correctness::Misplaced)
+            {
                 return false;
             }
         }

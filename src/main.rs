@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use std::borrow::Cow;
 
 use clap::{ArgEnum, Parser};
@@ -21,6 +22,7 @@ struct Args {
     rank_by: Rank,
 
     /// By default, correcness computation are cached. This flag disables that.
+    /// #[allow(warn(deprecated))]
     #[clap(long)]
     no_cache: bool,
 
