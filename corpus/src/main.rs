@@ -4,7 +4,9 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::num::NonZeroUsize;
 
-const DICTIONARY: &str = include_str!("../wordle.txt");
+// change to 5 or 6
+pub const WORD_LENGTH: usize = 5;
+const DICTIONARY: &str = include_str!("../wordle-5.txt");
 
 fn main() {
     let files: Vec<_> = std::env::args().skip(1).collect();
@@ -34,7 +36,7 @@ fn main() {
                 } else {
                     word
                 };
-                if word.len() != 5 {
+                if word.len() != WORD_LENGTH {
                     line.clear();
                     continue;
                 }

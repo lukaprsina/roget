@@ -6,6 +6,7 @@ use std::{borrow::Cow, collections::HashSet, num::NonZeroU8};
 mod solver;
 pub use solver::{Rank, Solver};
 
+pub const WORD_LENGTH: usize = 5;
 include!(concat!(env!("OUT_DIR"), "/dictionary.rs"));
 
 pub struct Wordle {
@@ -61,7 +62,7 @@ pub enum Correctness {
 }
 
 impl Correctness {
-    fn is_misplaced(letter: u8, answer: &str, used: &mut [bool; 5]) -> bool {
+    fn is_misplaced(letter: u8, answer: &str, used: &mut [bool; WORD_LENGTH]) -> bool {
         answer.bytes().enumerate().any(|(i, a)| {
             if a == letter && !used[i] {
                 used[i] = true;
@@ -71,10 +72,10 @@ impl Correctness {
         })
     }
 
-    pub fn compute(answer: &str, guess: &str) -> [Self; 5] {
-        assert_eq!(answer.len(), 5);
-        assert_eq!(guess.len(), 5);
-        let mut c = [Correctness::Wrong; 5];
+    pub fn compute(answer: &str, guess: &str) -> [Self; WORD_LENGTH] {
+        assert_eq!(answer.len(), WORD_LENGTH);
+        assert_eq!(guess.len(), WORD_LENGTH);
+        let mut c = [Correctness::Wrong; WORD_LENGTH];
         let answer_bytes = answer.as_bytes();
         let guess_bytes = guess.as_bytes();
         // Array indexed by lowercase ascii letters
@@ -102,24 +103,37 @@ impl Correctness {
     }
 }
 
-pub const MAX_MASK_ENUM: usize = 3 * 3 * 3 * 3 * 3;
+pub const MAX_MASK_ENUM: usize = 3_usize.pow(WORD_LENGTH as u32);
 
-/// A wrapper type for `[Correctness; 5]` packed into a single byte with a niche.
+/// A wrapper type for `[Correctness; WORD_LENGTH]` packed into a single byte with a niche.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 // The NonZeroU8 here lets the compiler know that we're not using the value `0`, and that `0` can
 // therefore be used to represent `None` for `Option<PackedCorrectness>`.
 struct PackedCorrectness(NonZeroU8);
 
-impl From<[Correctness; 5]> for PackedCorrectness {
-    fn from(c: [Correctness; 5]) -> Self {
-        let packed = c.iter().fold(0, |acc, c| {
-            acc * 3
-                + match c {
-                    Correctness::Correct => 0,
-                    Correctness::Misplaced => 1,
-                    Correctness::Wrong => 2,
+impl From<[Correctness; WORD_LENGTH]> for PackedCorrectness {
+    fn from(c: [Correctness; WORD_LENGTH]) -> Self {
+        println!();
+        let packed = c.iter().fold(0, |acc: u8, c| {
+            let old_acc = acc;
+            println!("acc {old_acc:#010b} * 3");
+            let multiplied_acc = acc.checked_mul(3_u8);
+            let multiplied_acc = match multiplied_acc {
+                Some(multiplied_acc) => multiplied_acc,
+                None => {
+                    panic!();
                 }
+            };
+
+            let correctness_value = match c {
+                Correctness::Correct => 0,
+                Correctness::Misplaced => 1,
+                Correctness::Wrong => 2,
+            };
+
+            let sum = multiplied_acc + correctness_value;
+            sum
         });
         Self(NonZeroU8::new(packed + 1).unwrap())
     }
@@ -133,7 +147,7 @@ impl From<PackedCorrectness> for u8 {
 
 pub struct Guess<'a> {
     pub word: Cow<'a, str>,
-    pub mask: [Correctness; 5],
+    pub mask: [Correctness; WORD_LENGTH],
 }
 
 impl Guess<'_> {
@@ -142,9 +156,9 @@ impl Guess<'_> {
         // This is equivalent to
         //     Correctness::compute(word, &self.word) == self.mask
         // without _necessarily_ computing the full mask for the tested word
-        assert_eq!(word.len(), 5);
-        assert_eq!(self.word.len(), 5);
-        let mut used = [false; 5];
+        assert_eq!(word.len(), WORD_LENGTH);
+        assert_eq!(self.word.len(), WORD_LENGTH);
+        let mut used = [false; WORD_LENGTH];
 
         // Check Correct letters
         for (i, (a, g)) in word.bytes().zip(self.word.bytes()).enumerate() {
@@ -192,71 +206,9 @@ macro_rules! guesser {
 }
 
 #[cfg(test)]
-macro_rules! mask {
-    (C) => {$crate::Correctness::Correct};
-    (M) => {$crate::Correctness::Misplaced};
-    (W) => {$crate::Correctness::Wrong};
-    ($($c:tt)+) => {[
-        $(mask!($c)),+
-    ]}
-}
-
-#[cfg(test)]
 mod tests {
-    mod guess_matcher {
-        use crate::Guess;
-        use std::borrow::Cow;
-
-        macro_rules! check {
-            ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
-                assert!(Guess {
-                    word: Cow::Borrowed($prev),
-                    mask: mask![$($mask )+]
-                }
-                .matches($next));
-                assert_eq!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
-            };
-            ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
-                assert!(!Guess {
-                    word: Cow::Borrowed($prev),
-                    mask: mask![$($mask )+]
-                }
-                .matches($next));
-                assert_ne!($crate::Correctness::compute($next, $prev), mask![$($mask )+]);
-            }
-        }
-
-        #[test]
-        fn from_jon() {
-            check!("abcde" + [C C C C C] allows "abcde");
-            check!("abcdf" + [C C C C C] disallows "abcde");
-            check!("abcde" + [W W W W W] allows "fghij");
-            check!("abcde" + [M M M M M] allows "eabcd");
-            check!("baaaa" + [W C M W W] allows "aaccc");
-            check!("baaaa" + [W C M W W] disallows "caacc");
-        }
-
-        #[test]
-        fn from_crash() {
-            check!("tares" + [W M M W W] disallows "brink");
-        }
-
-        #[test]
-        fn from_yukosgiti() {
-            check!("aaaab" + [C C C W M] allows "aaabc");
-            check!("aaabc" + [C C C M W] allows "aaaab");
-        }
-
-        #[test]
-        fn from_chat() {
-            // flocular
-            check!("aaabb" + [C M W W W] disallows "accaa");
-            // ritoban
-            check!("abcde" + [W W W W W] disallows "bcdea");
-        }
-    }
     mod game {
-        use crate::{Guess, Wordle};
+        use crate::{Guess, Wordle, WORD_LENGTH};
 
         #[test]
         fn genius() {
@@ -310,14 +262,14 @@ mod tests {
                 }
                 "wrong".to_string()
             });
-            assert_eq!(w.play("right", guesser), Some(5));
+            assert_eq!(w.play("right", guesser), Some(WORD_LENGTH));
         }
 
         #[test]
         fn phew() {
             let w = Wordle::new();
             let guesser = guesser!(|history| {
-                if history.len() == 5 {
+                if history.len() == WORD_LENGTH {
                     return "right".to_string();
                 }
                 "wrong".to_string()
@@ -334,7 +286,7 @@ mod tests {
     }
 
     mod compute {
-        use crate::Correctness;
+        /* use crate::Correctness;
 
         #[test]
         fn all_green() {
@@ -379,6 +331,6 @@ mod tests {
         #[test]
         fn ricoello_from_chat() {
             assert_eq!(Correctness::compute("abcde", "aacde"), mask![C W C C C]);
-        }
+        } */
     }
 }

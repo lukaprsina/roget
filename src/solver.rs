@@ -286,6 +286,10 @@ impl Solver {
     }
 }
 
+// change to 5 or 6
+// static FIRST_GUESS: &str = "presev";
+static FIRST_GUESS: &str = "tares";
+
 impl Guesser for Solver {
     fn guess(&mut self, history: &[Guess]) -> String {
         let score = history.len() as f64;
@@ -308,13 +312,13 @@ impl Guesser for Solver {
             self.last_guess_idx = Some(
                 self.remaining
                     .iter()
-                    .find(|(word, _, _)| &**word == "tares")
+                    .find(|(word, _, _)| &**word == FIRST_GUESS)
                     .map(|&(_, _, idx)| idx)
                     .unwrap(),
             );
             // NOTE: I did a manual run with this commented out and it indeed produced "tares" as
             // the first guess. It slows down the run by a lot though.
-            return "tares".to_string();
+            return FIRST_GUESS.to_string();
         } else if self.options.rank_by == Rank::First || self.remaining.len() == 1 {
             let w = self.remaining.first().unwrap();
             self.last_guess_idx = Some(w.2);

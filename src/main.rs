@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
 use clap::{ArgEnum, Parser};
-use roget::{Guesser, Solver};
+use roget::{Guesser, Solver, WORD_LENGTH};
 
-const GAMES: &str = include_str!("../answers.txt");
+// change to 5 or 6
+const GAMES: &str = include_str!("../answers-5.txt");
 
 #[global_allocator]
 static GLOBAL_ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -113,7 +114,7 @@ fn play_interactive(mut guesser: impl Guesser) {
                 }
             }
         };
-        if correctness == [roget::Correctness::Correct; 5] {
+        if correctness == [roget::Correctness::Correct; WORD_LENGTH] {
             println!("The answer was {}", guess.to_uppercase());
             return;
         }
@@ -125,7 +126,7 @@ fn play_interactive(mut guesser: impl Guesser) {
     println!("Game Over, only six guesses are allowed");
 }
 
-fn ask_for_correctness() -> Result<[roget::Correctness; 5], Cow<'static, str>> {
+fn ask_for_correctness() -> Result<[roget::Correctness; WORD_LENGTH], Cow<'static, str>> {
     print!("Colors: ");
     std::io::Write::flush(&mut std::io::stdout()).unwrap();
     let mut answer = String::with_capacity(7);
@@ -136,8 +137,8 @@ fn ask_for_correctness() -> Result<[roget::Correctness; 5], Cow<'static, str>> {
         .filter(|v| !v.is_whitespace())
         .map(|v| v.to_ascii_uppercase())
         .collect::<String>();
-    if answer.len() != 5 {
-        Err("You did not provide exactly 5 colors.")?;
+    if answer.len() != WORD_LENGTH {
+        Err("You did not provide exactly 6 colors.")?;
     }
     let parsed = answer
         .chars()
@@ -152,7 +153,7 @@ fn ask_for_correctness() -> Result<[roget::Correctness; 5], Cow<'static, str>> {
         .collect::<Result<Vec<_>, _>>()?;
     Ok(parsed
         .try_into()
-        .expect("The parsed correctness is checked to be 5 items long"))
+        .expect("The parsed correctness is checked to be 6 items long"))
 }
 
 fn play<G>(mut mk: impl FnMut() -> G, max: Option<usize>)
