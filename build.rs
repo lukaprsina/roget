@@ -1,6 +1,7 @@
 use std::io::prelude::*;
 
-const DICTIONARY: &str = include_str!("dictionary.txt");
+// change to 5 or 6
+const DICTIONARY: &str = include_str!("dictionary-5.txt");
 
 fn main() {
     println!("cargo:rerun-if-changed=dictionary.txt");

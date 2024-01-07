@@ -6,12 +6,11 @@ mod solver;
 pub use solver::{Rank, Solver};
 
 // change to 5 or 6
-pub const WORD_LENGTH: usize = 6;
-pub const GAMES: &str = include_str!("../answers-6.txt");
+pub const WORD_LENGTH: usize = 5;
+pub const GAMES: &str = include_str!("../answers-5.txt");
 
-static FIRST_GUESS: &str = "presev"; // 6
-
-// static FIRST_GUESS: &str = "tares"; // 5
+// static FIRST_GUESS: &str = "presev";
+static FIRST_GUESS: &str = "tares";
 
 include!(concat!(env!("OUT_DIR"), "/dictionary.rs"));
 

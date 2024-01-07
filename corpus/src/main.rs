@@ -5,8 +5,8 @@ use std::io::BufReader;
 use std::num::NonZeroUsize;
 
 // change to 5 or 6
-pub const WORD_LENGTH: usize = 6;
-const DICTIONARY: &str = include_str!("../wordle-6.txt");
+pub const WORD_LENGTH: usize = 5;
+const DICTIONARY: &str = include_str!("../wordle-5.txt");
 
 fn main() {
     let files: Vec<_> = std::env::args().skip(1).collect();

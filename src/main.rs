@@ -137,7 +137,10 @@ fn ask_for_correctness() -> Result<[roget::Correctness; WORD_LENGTH], Cow<'stati
         .map(|v| v.to_ascii_uppercase())
         .collect::<String>();
     if answer.len() != WORD_LENGTH {
-        Err("You did not provide exactly 6 colors.")?;
+        Err(format!(
+            "You did not provide exactly {} colors.",
+            WORD_LENGTH
+        ))?;
     }
     let parsed = answer
         .chars()

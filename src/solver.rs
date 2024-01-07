@@ -2,9 +2,9 @@ use crate::{
     Correctness, Guess, Guesser, PackedCorrectness, DICTIONARY, FIRST_GUESS, MAX_MASK_ENUM,
 };
 use once_cell::sync::OnceCell;
-use once_cell::unsync::OnceCell as UnSyncOnceCell;
 use std::borrow::Cow;
 use std::cell::Cell;
+use std::sync::Mutex;
 
 /// The initial set of words without any smoothing
 static INITIAL_COUNTS: OnceCell<Vec<(&'static str, f64, usize)>> = OnceCell::new();
@@ -18,9 +18,9 @@ static INITIAL_SIGMOID: OnceCell<Vec<(&'static str, f64, usize)>> = OnceCell::ne
 /// We store a `Box` because the array is quite large, and we're unlikely to have the stack space
 /// needed to store the whole thing on a given thread's stack.
 type Cache = [[Cell<Option<PackedCorrectness>>; DICTIONARY.len()]; DICTIONARY.len()];
-thread_local! {
-    static COMPUTES: UnSyncOnceCell<Box<Cache>> = Default::default();
-}
+// thread_local! {
+static COMPUTES: Mutex<Box<Cache>> = Mutex::new(Box::new());
+// }
 
 pub struct Solver {
     remaining: Cow<'static, Vec<(&'static str, f64, usize)>>,
@@ -31,6 +31,7 @@ pub struct Solver {
 
 impl Default for Solver {
     fn default() -> Self {
+        COMPUTES;
         Options::default().build()
     }
 }
